@@ -1,33 +1,28 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>BreakWise</title>
-</head>
-<body>
+<hr>
 
-  <h2>BreakWise</h2>
+<label>
+  Água (min):
+  <input type="number" id="agua" value="120">
+</label>
+<br><br>
 
-  <p>Status: <strong id="status">INATIVO</strong></p>
+<label>
+  Visão (min):
+  <input type="number" id="visao" value="30">
+</label>
+<br><br>
 
-  <button id="toggle">Ativar</button>
+<button id="salvar">Salvar Configuração</button>
 
-  <hr>
+<hr>
 
-  <label>
-    Água (min):
-    <input type="number" id="agua" value="60">
-  </label>
-  <br><br>
+<h3>Pausa Rápida</h3>
 
-  <label>
-    Visão (min):
-    <input type="number" id="visao" value="30">
-  </label>
-  <br><br>
+<label>
+  Tempo da pausa (min):
+  <input type="number" id="tempoPausa" value="15">
+</label>
+<br><br>
 
-  <button id="salvar">Salvar Configuração</button>
-
-  <script src="popup.js"></script>
-</body>
-</html>
+<p id="cronometro">00:00</p>
+<button id="pausaBtn">Iniciar Pausa</button>

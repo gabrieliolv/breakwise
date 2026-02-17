@@ -1,33 +1,42 @@
-const statusEl = document.getElementById("status");
-const toggleBtn = document.getElementById("toggle");
+const pausaBtn = document.getElementById("pausaBtn");
+const cronometroEl = document.getElementById("cronometro");
 
-function atualizarUI(ativo) {
-  statusEl.textContent = ativo ? "ATIVO" : "INATIVO";
-  toggleBtn.textContent = ativo ? "Desativar" : "Ativar";
+let intervalo;
+
+// Atualiza contador baseado no timestamp real
+function atualizarCronometro() {
+
+  chrome.storage.local.get(["pausaFim"], (data) => {
+
+    if (!data.pausaFim) {
+      cronometroEl.textContent = "00:00";
+      return;
+    }
+
+    const tempoRestante = Math.floor((data.pausaFim - Date.now()) / 1000);
+
+    if (tempoRestante <= 0) {
+      cronometroEl.textContent = "00:00";
+      clearInterval(intervalo);
+      return;
+    }
+
+    const minutos = Math.floor(tempoRestante / 60);
+    const segundos = tempoRestante % 60;
+
+    cronometroEl.textContent =
+      `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
+  });
 }
 
-chrome.storage.local.get(["ativo", "config"], (data) => {
-  atualizarUI(data.ativo || false);
+// Ao abrir popup
+atualizarCronometro();
+intervalo = setInterval(atualizarCronometro, 1000);
 
-  if (data.config) {
-    document.getElementById("agua").value = data.config.agua;
-    document.getElementById("visao").value = data.config.visao;
-  }
-});
+// Iniciar pausa
+pausaBtn.addEventListener("click", () => {
 
-toggleBtn.addEventListener("click", () => {
-  chrome.runtime.sendMessage({ action: "toggle" }, (response) => {
-    atualizarUI(response.ativo);
-  });
-});
+  const tempo = parseInt(document.getElementById("tempoPausa").value);
 
-document.getElementById("salvar").addEventListener("click", () => {
-  const config = {
-    agua: parseInt(document.getElementById("agua").value),
-    visao: parseInt(document.getElementById("visao").value)
-  };
-
-  chrome.runtime.sendMessage({ action: "salvarConfig", config });
-
-  alert("Configuração salva!");
+  chrome.runtime.sendMessage({ action: "iniciarPausa", tempo });
 });
