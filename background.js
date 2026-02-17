@@ -1,23 +1,36 @@
-let ativo = false;
-
-function iniciarLembretes() {
-  chrome.alarms.create("agua", { periodInMinutes: 60 });
-  chrome.alarms.create("visao", { periodInMinutes: 30 });
+function iniciarLembretes(config) {
+  chrome.alarms.create("agua", { periodInMinutes: config.agua });
+  chrome.alarms.create("visao", { periodInMinutes: config.visao });
 }
 
-chrome.runtime.onMessage.addListener((request) => {
-  if (request.action === "toggle") {
-    ativo = !ativo;
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
-    if (ativo) {
-      iniciarLembretes();
-    } else {
-      chrome.alarms.clearAll();
-    }
+  if (request.action === "toggle") {
+
+    chrome.storage.local.get(["ativo", "config"], (data) => {
+      const novoEstado = !data.ativo;
+
+      chrome.storage.local.set({ ativo: novoEstado });
+
+      if (novoEstado) {
+        iniciarLembretes(data.config);
+      } else {
+        chrome.alarms.clearAll();
+      }
+
+      sendResponse({ ativo: novoEstado });
+    });
+
+    return true;
+  }
+
+  if (request.action === "salvarConfig") {
+    chrome.storage.local.set({ config: request.config });
   }
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
+
   if (alarm.name === "agua") {
     chrome.notifications.create({
       type: "basic",

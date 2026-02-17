@@ -5,8 +5,28 @@
   <title>BreakWise</title>
 </head>
 <body>
+
   <h2>BreakWise</h2>
-  <button id="toggle">Ativar / Desativar</button>
+
+  <p>Status: <strong id="status">INATIVO</strong></p>
+
+  <button id="toggle">Ativar</button>
+
+  <hr>
+
+  <label>
+    Água (min):
+    <input type="number" id="agua" value="60">
+  </label>
+  <br><br>
+
+  <label>
+    Visão (min):
+    <input type="number" id="visao" value="30">
+  </label>
+  <br><br>
+
+  <button id="salvar">Salvar Configuração</button>
 
   <script src="popup.js"></script>
 </body>
