@@ -1,5 +1,5 @@
 // ==========================================
-// FUNÇÃO PARA INICIAR ALARMES
+// INICIAR ALARMES
 // ==========================================
 function iniciarLembretes(config) {
 
@@ -25,11 +25,30 @@ function iniciarLembretes(config) {
 
 
 // ==========================================
-// RECEBER MENSAGENS DO POPUP
+// FUNÇÃO SEGURA DE NOTIFICAÇÃO
+// ==========================================
+async function enviarNotificacao(titulo, mensagem) {
+  try {
+    await chrome.notifications.create(
+      crypto.randomUUID(),
+      {
+        type: "basic",
+        iconUrl: chrome.runtime.getURL("icon.png"),
+        title: titulo,
+        message: mensagem
+      }
+    );
+  } catch (erro) {
+    console.error("Erro ao criar notificação:", erro);
+  }
+}
+
+
+// ==========================================
+// MENSAGENS DO POPUP
 // ==========================================
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
-  // ATIVAR / DESATIVAR
   if (request.action === "toggle") {
 
     chrome.storage.local.get(["ativo", "config"], (data) => {
@@ -50,7 +69,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
 
-  // SALVAR CONFIGURAÇÃO (já inicia automaticamente se estiver ativo)
   if (request.action === "salvarConfig") {
 
     chrome.storage.local.set({ config: request.config });
@@ -66,7 +84,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
 
-  // INICIAR PAUSA RÁPIDA COM TIMESTAMP REAL
   if (request.action === "iniciarPausa") {
 
     const agora = Date.now();
@@ -81,17 +98,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ iniciado: true });
     return true;
   }
-
-
-  // CANCELAR PAUSA
-  if (request.action === "cancelarPausa") {
-
-    chrome.alarms.clear("pausaRapida");
-    chrome.storage.local.remove("pausaFim");
-
-    sendResponse({ cancelado: true });
-    return true;
-  }
 });
 
 
@@ -100,41 +106,43 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // ==========================================
 chrome.alarms.onAlarm.addListener((alarm) => {
 
+  console.log("Alarme disparado:", alarm.name);
+
+  const opcoes = {
+    type: "basic",
+    iconUrl: chrome.runtime.getURL("icon.png"),
+    title: "",
+    message: ""
+  };
+
   if (alarm.name === "agua") {
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: chrome.runtime.getURL("icon.png"),
-      title: "💧 Hora de beber água",
-      message: "Mantenha-se hidratada."
-    });
+    opcoes.title = "💧 Hora de beber água";
+    opcoes.message = "Mantenha-se hidratada.";
   }
 
   if (alarm.name === "visao") {
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: chrome.runtime.getURL("icon.png"),
-      title: "👀 Descanse a vista",
-      message: "Olhe para longe por 20 segundos."
-    });
+    opcoes.title = "👀 Descanse a vista";
+    opcoes.message = "Olhe para longe por 20 segundos.";
   }
 
   if (alarm.name === "pausaRapida") {
-
     chrome.storage.local.remove("pausaFim");
-
-    chrome.notifications.create({
-      type: "basic",
-      iconUrl: chrome.runtime.getURL("icon.png"),
-      title: "⏱️ Pausa finalizada!",
-      message: "Hora de voltar ao foco."
-    });
+    opcoes.title = "⏱️ Pausa finalizada!";
+    opcoes.message = "Hora de voltar ao foco.";
   }
+
+  // IMPORTANTE: usar callback para manter worker ativo
+  chrome.notifications.create(
+    `notif-${Date.now()}`,
+    opcoes,
+    () => {
+      console.log("Notificação criada");
+    }
+  );
 });
 
-
 // ==========================================
-// INICIAR AUTOMATICAMENTE SE JÁ ESTAVA ATIVO
-// (Quando o navegador reinicia)
+// REINICIAR SE JÁ ESTAVA ATIVO
 // ==========================================
 chrome.storage.local.get(["ativo", "config"], (data) => {
   if (data.ativo) {
