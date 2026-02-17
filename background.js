@@ -1,18 +1,18 @@
-// ===============================
-// INICIAR LEMBRETES CONFIGURÁVEIS
-// ===============================
+// ==========================================
+// FUNÇÃO PARA INICIAR ALARMES
+// ==========================================
 function iniciarLembretes(config) {
 
   chrome.alarms.clearAll(() => {
 
-    if (config.agua > 0) {
+    if (config?.agua > 0) {
       chrome.alarms.create("agua", {
         delayInMinutes: config.agua,
         periodInMinutes: config.agua
       });
     }
 
-    if (config.visao > 0) {
+    if (config?.visao > 0) {
       chrome.alarms.create("visao", {
         delayInMinutes: config.visao,
         periodInMinutes: config.visao
@@ -24,12 +24,12 @@ function iniciarLembretes(config) {
 }
 
 
-// ===============================
+// ==========================================
 // RECEBER MENSAGENS DO POPUP
-// ===============================
+// ==========================================
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
-  // ATIVAR / DESATIVAR EXTENSÃO
+  // ATIVAR / DESATIVAR
   if (request.action === "toggle") {
 
     chrome.storage.local.get(["ativo", "config"], (data) => {
@@ -50,7 +50,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
 
-  // SALVAR CONFIGURAÇÃO
+  // SALVAR CONFIGURAÇÃO (já inicia automaticamente se estiver ativo)
   if (request.action === "salvarConfig") {
 
     chrome.storage.local.set({ config: request.config });
@@ -66,7 +66,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
 
-  // INICIAR PAUSA RÁPIDA (COM TIMESTAMP REAL)
+  // INICIAR PAUSA RÁPIDA COM TIMESTAMP REAL
   if (request.action === "iniciarPausa") {
 
     const agora = Date.now();
@@ -95,15 +95,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 
-// ===============================
+// ==========================================
 // DISPARO DOS ALARMES
-// ===============================
+// ==========================================
 chrome.alarms.onAlarm.addListener((alarm) => {
 
   if (alarm.name === "agua") {
     chrome.notifications.create({
       type: "basic",
-      iconUrl: "icon.png",
+      iconUrl: chrome.runtime.getURL("icon.png"),
       title: "💧 Hora de beber água",
       message: "Mantenha-se hidratada."
     });
@@ -112,7 +112,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "visao") {
     chrome.notifications.create({
       type: "basic",
-      iconUrl: "icon.png",
+      iconUrl: chrome.runtime.getURL("icon.png"),
       title: "👀 Descanse a vista",
       message: "Olhe para longe por 20 segundos."
     });
@@ -124,9 +124,20 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
     chrome.notifications.create({
       type: "basic",
-      iconUrl: "icon.png",
+      iconUrl: chrome.runtime.getURL("icon.png"),
       title: "⏱️ Pausa finalizada!",
       message: "Hora de voltar ao foco."
     });
+  }
+});
+
+
+// ==========================================
+// INICIAR AUTOMATICAMENTE SE JÁ ESTAVA ATIVO
+// (Quando o navegador reinicia)
+// ==========================================
+chrome.storage.local.get(["ativo", "config"], (data) => {
+  if (data.ativo) {
+    iniciarLembretes(data.config || { agua: 120, visao: 30 });
   }
 });
