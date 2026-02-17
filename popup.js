@@ -1,9 +1,71 @@
 const pausaBtn = document.getElementById("pausaBtn");
 const cronometroEl = document.getElementById("cronometro");
+const toggleBtn = document.getElementById("toggle");
+const statusEl = document.getElementById("status");
 
 let intervalo;
 
-// Atualiza contador baseado no timestamp real
+// =============================
+// ATUALIZA STATUS ATIVO/INATIVO
+// =============================
+function atualizarUI(ativo) {
+
+  if (ativo) {
+    statusEl.textContent = "ATIVO";
+    toggleBtn.textContent = "Desativar";
+    toggleBtn.classList.remove("inativo");
+    toggleBtn.classList.add("ativo");
+  } else {
+    statusEl.textContent = "INATIVO";
+    toggleBtn.textContent = "Ativar";
+    toggleBtn.classList.remove("ativo");
+    toggleBtn.classList.add("inativo");
+  }
+}
+
+// =============================
+// VERIFICAR ESTADO AO ABRIR
+// =============================
+chrome.storage.local.get(["ativo", "config"], (data) => {
+
+  atualizarUI(data.ativo || false);
+
+  if (data.config) {
+    document.getElementById("agua").value = data.config.agua;
+    document.getElementById("visao").value = data.config.visao;
+  }
+});
+
+// =============================
+// TOGGLE ATIVAR/DESATIVAR
+// =============================
+toggleBtn.addEventListener("click", () => {
+
+  chrome.runtime.sendMessage({ action: "toggle" }, (response) => {
+    atualizarUI(response.ativo);
+  });
+
+});
+
+// =============================
+// SALVAR CONFIG
+// =============================
+document.getElementById("salvar").addEventListener("click", () => {
+
+  const config = {
+    agua: parseInt(document.getElementById("agua").value),
+    visao: parseInt(document.getElementById("visao").value)
+  };
+
+  chrome.runtime.sendMessage({ action: "salvarConfig", config }, () => {
+    alert("Configuração salva!");
+  });
+
+});
+
+// =============================
+// CRONÔMETRO PERSISTENTE
+// =============================
 function atualizarCronometro() {
 
   chrome.storage.local.get(["pausaFim"], (data) => {
@@ -29,14 +91,17 @@ function atualizarCronometro() {
   });
 }
 
-// Ao abrir popup
+// Atualiza ao abrir
 atualizarCronometro();
 intervalo = setInterval(atualizarCronometro, 1000);
 
-// Iniciar pausa
+// =============================
+// INICIAR PAUSA
+// =============================
 pausaBtn.addEventListener("click", () => {
 
   const tempo = parseInt(document.getElementById("tempoPausa").value);
 
   chrome.runtime.sendMessage({ action: "iniciarPausa", tempo });
+
 });
